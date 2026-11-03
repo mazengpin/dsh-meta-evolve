@@ -25,6 +25,18 @@
  *                                  take it on faith.
  *   GET  /meta-evolve/api/rounds  — the recorded rounds, newest first, with the
  *                                  count and the file's line census beside it.
+ *   GET  /meta-evolve/api/rounds/beam — the recorded BEAM deltas, newest first,
+ *                                  RE-READ from the record file on every request,
+ *                                  so a delta cannot be served from a cache.
+ *
+ * THE ELIXIR APP IS A DELTA SOURCE, NOT A DECORATION
+ *
+ * A round also captures what the control app's BEAM looked like at that instant
+ * (`host/beam-round.ts`), so a round can cite the app's own loaded-module count,
+ * uptime, fleet census and HTTP counters. Every one of those is `{value}` or
+ * `{unmeasured: reason}`; an app that is down is a list of reasons, never a row
+ * of zeros, because "no modules loaded" and "nothing was measured" are different
+ * facts and only one of them is cheap to fabricate.
  *
  * THE ONE RULE THAT DECIDES WHETHER THIS IS HONEST
  *
@@ -78,8 +90,28 @@ export const name = 'dsh-meta-evolve'
 /** The one service this plugin cannot work without. */
 export const inject = ['webServer']
 
-/** The three advertised paths, re-exported so a verifier derives them from one place. */
-export { STATE_PATH, EVOLVE_PATH, ROUNDS_PATH, ROUTE_PATHS } from './host/routes.ts'
+/** Every advertised path, re-exported so a verifier derives them from one place. */
+export { STATE_PATH, EVOLVE_PATH, ROUNDS_PATH, BEAM_ROUNDS_PATH, ROUTE_PATHS } from './host/routes.ts'
+
+/**
+ * The BEAM capture and its comparison, re-exported so a verifier can DRIVE them.
+ *
+ * A verifier that could only read this over `POST /evolve` would need a live
+ * Elixir app to test the ABSENT path, and the absent path is the one that
+ * matters: `captureBeam` against a closed port must report reasons, never zeros.
+ * Exporting the function is what makes that check possible without the app up.
+ */
+export {
+  BEAM_FIELD_NAMES,
+  BEAM_IDENTITY_NAMES,
+  BEAM_STATUS_PATH,
+  CONTROL_URL_ENV,
+  DEFAULT_CONTROL_PORT,
+  FLEET_STATUS_PATH,
+  captureBeam,
+  computeBeamDelta,
+  resolveControlUrl,
+} from './host/beam-round.ts'
 
 /**
  * The row's config, uninterpreted.

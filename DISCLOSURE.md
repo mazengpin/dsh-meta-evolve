@@ -11,9 +11,10 @@ It composes the program's live state from routes the program already serves, and
 
 `node verify/meta-evolve-verify.mjs` — **30 of 30 checks passed**, exit code **0**, with **3 driven mutations**: `dead-host-port`, `stale-fixture-delta`, `delta-assertion-red`.
 The mutations are driven rather than asserted: check `F1 verdict` reads the mutation count back out of the run that performed them.
-`npm pack --dry-run` — **21 files / 88.6 kB** package size (308.4 kB unpacked), exit code **0**, measured on this clone on 2026-11-03 with `DISCLOSURE.md` and `CONTEXT.md` in `files` (the same command read **19 files / 85.0 kB** before those two documents were added).
+`npm pack --dry-run` — **22 files / 99.3 kB** package size (348.9 kB unpacked), exit code **0**, measured on this clone on 2026-11-03 after `src/host/beam-round.ts` was added. **Corrected in place:** this read **21 files / 88.6 kB** (308.4 kB unpacked) earlier the same day, before that file existed, and **19 files / 85.0 kB** before `DISCLOSURE.md` and `CONTEXT.md` were added to `files` — three measurements of three different trees, not a drift.
 `ROADMAP.md` prints **18 files / 84.1 kB**; that figure did **not** reproduce on re-measurement, and the measured figure in this section is the one to use.
-It registers three routes: `GET /meta-evolve/api/state` (the composed live state), `POST /meta-evolve/api/evolve` (the control that appends a round) and `GET /meta-evolve/api/rounds` (the recorded rounds, newest first).
+`node verify/beam-round.mjs` — **14 of 14 checks passed**, exit code **0**, with **2 driven mutations**: `absent-folded-to-zero` and `delta-blind-to-movement`.
+It registers four routes: `GET /meta-evolve/api/state` (the composed live state), `POST /meta-evolve/api/evolve` (the control that appends a round), `GET /meta-evolve/api/rounds` (the recorded rounds, newest first) and `GET /meta-evolve/api/rounds/beam` (the recorded BEAM deltas, newest first, read off the record file on every request).
 Its bundle patch `cordis.patch.yml` mounts one loader row, `id: meta-evolve`, with no `config:` block, because there is no config schema yet and an invented one would be an invented install spec.
 
 ## 3. What it does NOT do
@@ -32,13 +33,21 @@ It does **not** verify that a recorded round is truthful — that limit is state
 
 **Reads, from disk**, under the program workspace: `<program-workspace>/plan/intent-field/field.json` fills the `intentField` field, and a directory census of `<plugins-src>/dsh-meta-*` fills the `plugins` field, counted as directories because a listing is not a count.
 
+**Reads, over loopback HTTP, from the ELIXIR CONTROL APP** — `http://127.0.0.1:4100` by default, `CONTROL_PORT` or `DSH_META_EVOLVE_CONTROL_URL` overriding it: `GET /api/beam/status` and `GET /fleet/status`, the same two routes the `jido` MCP surface's `beam_status` and `fleet_status` actions front. **Both are GETs and this package writes nothing there** — the control plane's only write routes (`POST /api/module_dump`, `/api/module_promote`, `/api/module_revert`, `/fleet/start`, `/fleet/stop`, `/fleet/stop-all`) are never called from here. The endpoint was read from the MCP server config row `jido-mcp`, not guessed, and `src/host/beam-round.ts` cites that file in its header.
+
 **Writes, exactly one file** — `<program-workspace>/research/meta-evolve-rounds.jsonl`, append-only JSONL, one line per round.
+
+**The round's shape**, one JSON object per line: `n`, `at`, `host`, `workspace`, `model`, `counts`, `countsRead`, `fieldReadable`, `ids`, `delta`, `deltaReason`, `beam`, `beamReason`, `beamDeltaReason`, `unreadable`.
+`beam` is the control app as that round saw it — `loadedModuleCount`, `processCount`, `uptimeMs`, `httpRequests`, `httpConnections`, `fleetUnits`, plus `identity` (`node`, `systemPid`), `readings: {read, of}` and `unavailable` — and **every field is `{value}` or `{unmeasured: reason}`**: a control app that was down is six reasons, never six zeros.
+`delta.beam` compares those fields with the previous round, adds `restarted` from the pid, and is **`null` with `reason: 'first round'`** on the first round rather than a set of zero movements.
+A record written before the `beam` field existed reads back as `beam: null` with a reason; the route does not present it as an unchanged BEAM.
 It writes **NONE** elsewhere: no second file, no database, no profile manifest, no plan document, no cache.
 It touches **NONE** of: the GPU, any model, any network peer off this machine.
 
 ## 5. Network
 
-It reads **only loopback prefixes**: `/decision-log/api/`, `/lvl1-gate/api/` and `/intent-map/api/`, on the host URL it is configured with (default `http://127.0.0.1:3083`).
+It reads **only loopback prefixes**: `/decision-log/api/`, `/lvl1-gate/api/` and `/intent-map/api/` on the host URL it is configured with (default `http://127.0.0.1:3083`), plus `/api/beam/status` and `/fleet/status` on the control app (default `http://127.0.0.1:4100`).
+The control-app reads are **read-only by construction**: two `GET`s, with no write route named anywhere in the package.
 It opens **no outbound connection**, calls **no model**, and **never reaches the GPU**: the GPU is reached only through `llama.cpp` and its controlling scripts, and this package opens no device.
 
 ## 6. Security posture

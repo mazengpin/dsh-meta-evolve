@@ -8,6 +8,15 @@
  * and the response does not show the change, the route is a read, not a control —
  * the verify harness asserts the file's line count before and after.
  *
+ * AND THE ROUND NOW CARRIES THE ELIXIR APP. A round's `beam` object is the
+ * control app as that round saw it (`host/beam-round.ts`), and `delta.beam` is
+ * the comparison against the previous round's. On the first round there is
+ * nothing to compare, so `delta.beam` is `null` and BOTH the delta and the record
+ * say `'first round'` — a delta of zeros would claim a BEAM that did not move.
+ * Its absences live in the delta's own `unavailable` map, not the round's: a
+ * control app that was down must not change what the five HTTP/disk counts say
+ * about themselves.
+ *
  * WHAT A DELTA IS, AND WHAT "FIRST ROUND" MEANS
  *
  * `delta` names every count that moved, by how much, plus the ids that appeared,
@@ -34,6 +43,8 @@
 
 import { appendFileSync, existsSync, mkdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname } from 'node:path'
+import type { BeamDelta, BeamField } from './beam-round.ts'
+import { computeBeamDelta } from './beam-round.ts'
 import type { FieldName, IntentRowRef, Snapshot } from './sources.ts'
 import { FIELD_NAMES } from './sources.ts'
 
@@ -91,6 +102,16 @@ export interface RoundsDelta {
     readonly plugins: { readonly previous: number | null; readonly now: number | null }
     readonly intentRows: { readonly previous: number | null; readonly now: number | null }
   }
+  /**
+   * THE ELIXIR APP, COMPARED.
+   *
+   * `null` means there was nothing to compare, and `beamReason` says which of the
+   * two reasons it was: `'first round'`, or a previous record that predates the
+   * field. It is never a set of zero movements — a zero would claim the BEAM did
+   * not change when nothing was compared.
+   */
+  readonly beam: BeamDelta | null
+  readonly beamReason: string | null
   readonly unavailable: Record<string, string>
 }
 
@@ -111,6 +132,16 @@ export interface RoundRecord {
   }
   readonly delta: RoundsDelta | null
   readonly deltaReason: string | null
+  /**
+   * The control app as this round saw it. `null` only for a record written
+   * before the field existed; a round written by this build always carries the
+   * object, whose unread fields each hold `{unmeasured: reason}`.
+   */
+  readonly beam: BeamField | null
+  /** Why `beam` is `null`. Absent reading, named — never an empty object. */
+  readonly beamReason: string | null
+  /** Why `delta.beam` is `null`. This is the record's own copy of the delta's reason. */
+  readonly beamDeltaReason: string | null
   readonly unreadable: Partial<Record<FieldName, string>>
 }
 
@@ -239,7 +270,11 @@ function compareSets<T>(
  * @param current - the fresh snapshot.
  * @returns the delta, with every uncomparable count or set carrying its reason.
  */
-export function computeDelta(previous: RoundRecord, current: Snapshot): RoundsDelta {
+export function computeDelta(
+  previous: RoundRecord,
+  current: Snapshot,
+  beam: BeamField | null = null,
+): RoundsDelta {
   const keys = [...new Set([...Object.keys(previous.counts), ...Object.keys(current.counts)])].sort()
   const counts: Record<string, DeltaCount> = {}
   const moved: Array<{ key: string; from: number; to: number; delta: number }> = []
@@ -322,6 +357,19 @@ export function computeDelta(previous: RoundRecord, current: Snapshot): RoundsDe
     }
   }
 
+  // THE ELIXIR APP. A previous record written before the beam field existed has
+  // no baseline, so the comparison is `null` WITH a reason rather than a delta
+  // against an empty object that would report every field as "appeared".
+  const previousBeam = previous.beam ?? null
+  const beamDelta = previousBeam === null || beam === null
+    ? null
+    : computeBeamDelta(previousBeam, beam, previous.n)
+  const beamReason = previousBeam === null
+    ? `round ${previous.n} carries no beam record, so the BEAM cannot be compared`
+    : beam === null
+      ? 'this round captured no beam record, so the BEAM cannot be compared'
+      : null
+
   return {
     against: previous.n,
     againstAt: previous.at,
@@ -330,6 +378,8 @@ export function computeDelta(previous: RoundRecord, current: Snapshot): RoundsDe
     movedOf: { moved: moved.length, checked: keys.length, uncompared },
     values,
     changedValues,
+    beam: beamDelta,
+    beamReason,
     valuesOf: { changed: valuesChanged, checked: Object.keys(identityNow).length, uncomparable: valuesUncomparable },
     appeared: { decisions: decisions.appeared, plugins: plugins.appeared, intentRows: intentRows.appeared },
     disappeared: { decisions: decisions.disappeared, plugins: plugins.disappeared, intentRows: intentRows.disappeared },
@@ -350,10 +400,16 @@ export function buildRound(input: {
   readonly host: string
   readonly workspace: string | null
   readonly unreadable: Partial<Record<FieldName, string>>
+  readonly beam: BeamField | null
   readonly now?: Date
 }): RoundRecord {
   const at = (input.now ?? new Date()).toISOString()
   const values = Object.values(input.snapshot.counts)
+  // ONE comparison, read twice: the delta and its beam reason cannot disagree
+  // about what was compared if there is only one computation.
+  const delta = input.previous === null
+    ? null
+    : computeDelta(input.previous, input.snapshot, input.beam)
   return {
     n: input.previous === null ? 1 : input.previous.n + 1,
     at,
@@ -364,8 +420,14 @@ export function buildRound(input: {
     countsRead: { read: values.filter((value) => value !== null).length, of: values.length },
     fieldReadable: input.snapshot.fieldReadable,
     ids: input.snapshot.ids,
-    delta: input.previous === null ? null : computeDelta(input.previous, input.snapshot),
+    beam: input.beam,
+    beamReason: input.beam === null ? 'the control app was not captured for this round' : null,
+    delta,
     deltaReason: input.previous === null ? 'first round' : null,
+    // The record's own copy of `delta.beam`'s reason. On the FIRST round there is
+    // no previous record to diff against, so the reason names that case exactly
+    // rather than leaving a bare `null` behind.
+    beamDeltaReason: delta === null ? 'first round' : delta.beamReason,
     unreadable: input.unreadable,
   }
 }
