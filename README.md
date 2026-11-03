@@ -9,7 +9,7 @@ It opens no device and calls no model: the GPU is reached only through `llama.cp
 
 ## Develop from source — NOT the consumer install path
 
-**These four steps are for DEVELOPING the package, not for a consumer.** They clone, build and `link:` the working tree, so a profile runs this source. A consumer does none of this: a consumer installs the published pre-release tarball only (`npm install dsh-meta-evolve@next`), and until that tarball is published there is nothing a consumer can install — the package is a SOURCE PREVIEW, and `DISCLOSURE.md` section 8 states the same.
+**These four steps are for DEVELOPING the package, not for a consumer.** They clone, build and `link:` the working tree, so a profile runs this source. A consumer does none of this: a consumer adopts the published pre-release only, and until that release is published there is nothing a consumer can install — the package is a SOURCE PREVIEW, and `DISCLOSURE.md` section 8 states the same.
 
 Four steps, once, in a profile that has never seen this package.
 
@@ -25,6 +25,14 @@ The package ships its own bundle patch at `cordis.patch.yml`. A profile that lis
 
 The host half registers its routes under the prefix `/meta-evolve`. `GET /meta-evolve/api/state` composes the live program state; the rounds store keeps one record per evolution round with its deltas; `POST /meta-evolve/api/evolve` appends a round and returns what moved.
 The client half contributes one panel page through the profile's client slot set, declared in `dsh.client.inject`. It renders state and it does not reach the GPU.
+
+## Adopting it inside DSH
+
+**What it provides.** One host half under the `/meta-evolve` route prefix — `GET /meta-evolve/api/state` composing the live program state and `POST /meta-evolve/api/evolve` appending a round — plus one client panel page contributed through the profile's client slot set. It opens no device and calls no model.
+**What a deployment needs.** A running harness that serves this plugin, the other programs' routes on the same origin (decision log, intent field, LVL1 gate, intent map, meta clones), and a profile carrying its own `package.json`. It reads other programs' control-plane routes on the same origin; it names no vendor, no model and no device.
+**How a profile enables a package.** Through the profile's bundle list: add the package name to `dsh.profile.bundles` in the profile `package.json`, and give that same file a **relative** `link:` dependency resolving to the built clone — absolute paths are forbidden. The package ships its own bundle patch at `cordis.patch.yml`; the profile merges that layer at boot and mounts the one loader row stated above, with no `config:` block. A `dsh.profile.bundles` change hot-reloads; a newly added dependency is not seen until the next boot.
+**A source preview is readable, not installable.** The tree in `plugins-src/` can be read, cloned and built, and the four develop steps above make a live profile run it — but reading it is not adopting it, and a source tree is never the thing a consumer consumes.
+**Adoption is by the published release.** Adoption means the published pre-release, on the `next` dist-tag, resolved as an ordinary dependency of the profile; until that release is published there is no adopting command to run.
 
 ## Roadmap at a glance
 
