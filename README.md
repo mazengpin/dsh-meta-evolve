@@ -14,7 +14,7 @@ It opens no device and calls no model: the GPU is reached only through `llama.cp
 Four steps, once, in a profile that has never seen this package.
 
 1. Clone the repository next to the other clones, so the profile can reach it with a relative link:
-   `git clone <repo-url> C:/Users/<you>/Projects/deepseek-root/plugins-src/dsh-meta-evolve`
+   `git clone <repo-url> <home>/Projects/deepseek-root/plugins-src/dsh-meta-evolve`
 2. Install and build inside the clone: `cd plugins-src/dsh-meta-evolve` then `pnpm install` then `pnpm run build`. The build writes `lib/index.js` (host half) and `lib/client.js` (web client bundle), and both are what the profile actually loads.
 3. Add the dependency to the profile's `package.json` as a **relative** link — never an absolute path: `"dsh-meta-evolve": "link:../../plugins-src/dsh-meta-evolve"`.
 4. Add `"dsh-meta-evolve"` to the same file's `dsh.profile.bundles` array, then restart the profile. A bundles change hot-reloads, but a newly added dependency is not seen until the next boot.
