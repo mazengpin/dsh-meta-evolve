@@ -21,7 +21,8 @@
     "LICENSE",
     "DISCLOSURE.md",
     "CONTEXT.md",
-    "ROADMAP.md"
+    "ROADMAP.md",
+    "verify"
   ],
   "engines": {
     "node": "^22.19.0 || >=24.0.0",
