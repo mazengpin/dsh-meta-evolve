@@ -19,6 +19,8 @@
     "cordis.patch.yml",
     "README.md",
     "LICENSE",
+    "DISCLOSURE.md",
+    "CONTEXT.md",
     "ROADMAP.md"
   ],
   "engines": {

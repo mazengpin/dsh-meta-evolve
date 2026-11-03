@@ -1,13 +1,15 @@
 # dsh-meta-evolve
 
-> **Status: PRE-RELEASE `0.9.0` — under active development.** This package is published on the `next` dist-tag, not `latest`.
+> **Status: PRE-RELEASE `0.9.0` — under active development.** This package targets the `next` dist-tag, not `latest`, and it is **not published yet**: there is no tarball to install today (`DISCLOSURE.md` section 8).
 > Its API, wire records and panel contracts may change between `0.9.x` releases, and each package carries its own `ROADMAP.md` naming what `1.0.0` still requires.
 > A published tarball is a snapshot of a moving surface: read `ROADMAP.md` before depending on a shape.
 
 **The evolution half of the meta layer.** It composes this program's live state from its own routes — decision log, intent field, LVL1 gate, intent map, meta clones — and records **evolution rounds** as deltas against the previous round. `POST /meta-evolve/api/evolve` is the control that appends a round.
 It opens no device and calls no model: the GPU is reached only through `llama.cpp` and its controlling scripts.
 
-## Install
+## Develop from source — NOT the consumer install path
+
+**These four steps are for DEVELOPING the package, not for a consumer.** They clone, build and `link:` the working tree, so a profile runs this source. A consumer does none of this: a consumer installs the published pre-release tarball only (`npm install dsh-meta-evolve@next`), and until that tarball is published there is nothing a consumer can install — the package is a SOURCE PREVIEW, and `DISCLOSURE.md` section 8 states the same.
 
 Four steps, once, in a profile that has never seen this package.
 
