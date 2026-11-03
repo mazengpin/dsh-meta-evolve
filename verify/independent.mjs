@@ -438,6 +438,10 @@ const UPSTREAM_FIXTURES = {
     ok: true,
     hooked: true,
     count: 3,
+    // historyCensus lives on the SESSIONS route (src/host/sources.ts:446 reads it there), and it is the
+    // census that shares the population of `count`; `outcomeCensus` is the in-process census and must
+    // stay beside it rather than being read as the merged one.
+    historyCensus: { decided: 2, declined: 1, neverRan: 0, basis: 'merged session history' },
     outcomeCensus: { decided: 2, declined: 1, neverRan: 0 },
   },
   '/intent-map/api/map': {

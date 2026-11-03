@@ -45,7 +45,7 @@
   "scripts": {
     "build": "tsdown",
     "typecheck": "tsc --noEmit",
-    "verify": "node verify/meta-evolve-verify.mjs",
+    "verify": "node verify/meta-evolve-verify.mjs && node verify/independent.mjs",
     "check": "npm run typecheck && npm run build && npm run verify",
     "prepack": "npm run build"
   },
