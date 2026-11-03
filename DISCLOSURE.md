@@ -68,3 +68,10 @@ The repository exists **to be READ**.
 The package is **NOT installable from source today**: there is no published tarball, so there is nothing a consumer can install.
 Install arrives **with the published pre-release tarball on the `next` dist-tag**; `publishConfig.tag` is already `next` in `package.json`.
 This package carries **no `repository` field**: the release owner sets it at publish time, and it is deliberately not invented here.
+
+## 9. Why a round record belongs in the ecosystem
+
+A plugin ecosystem drifts silently: each clone, each route and each mounted row moves on its own schedule, and no single version number changes when the composition changes.
+A round recorded as a delta against the previous round turns that drift into one number a reader can compare, so a movement no suite reports still shows up as movement.
+The record also carries what it could not read, so an absent source reads as an absence rather than as a zero.
+That is why the record belongs beside the plugins rather than inside one of them: it is the only artifact that has a previous round to be a delta against.
