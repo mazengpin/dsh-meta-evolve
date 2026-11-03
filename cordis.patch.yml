@@ -1,0 +1,24 @@
+# dsh-meta-evolve bundle patch.
+#
+# `dsh.bundle.patch` in package.json points here. A profile that lists this
+# package in its `dsh.profile.bundles` merges this layer at boot.
+#
+# ONE ROW, AND THAT IS THE WHOLE PATCH. This is the package shell: it mounts the
+# Host half (`lib/index.js`, via the package's `.` export) and nothing else. The
+# row registers ONE exact route, `GET /meta-evolve/api/state`, which answers
+# `{"ok":true,"built":true,"note":"scaffold"}`. No preset row, no MCP row, no
+# service row — the meta layer's surface is a later lane's work, and a row that
+# is not needed is a boot cost that also has to be undone.
+#
+# `id: meta-evolve` IS THE LOADER ROW ID, NOT THE PACKAGE NAME. The name below is
+# what resolves through the profile's module tree to this clone, and the pair is
+# the same split the sibling `dsh-lvl1-gate` uses (`id: lvl1-gate` /
+# `name: 'dsh-lvl1-gate'`).
+#
+# THE ROW NAMES NO `config:` BLOCK, deliberately. There is no config schema yet,
+# and inventing one here would be an invented install spec; `apply` logs the
+# config key list it receives, so the first lane that needs a key can add it in
+# one place and see it in the boot log.
+- insert:
+    - id: meta-evolve
+      name: 'dsh-meta-evolve'

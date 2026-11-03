@@ -1,0 +1,60 @@
+{
+  "name": "dsh-meta-evolve",
+  "version": "0.9.0",
+  "type": "module",
+  "description": "The evolution half of the meta layer for the dsh-meta-evolve program. It composes the program's live state from its own routes (decision log, intent field, LVL1 gate, intent map, meta clones) and records EVOLUTION ROUNDS as deltas against the previous round; POST /meta-evolve/api/evolve is the control that appends a round. It opens no device and calls no model — the GPU is reached only through llama.cpp and its controlling scripts.",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./src/*": "./src/*",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/client.js",
+    "src",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE",
+    "ROADMAP.md"
+  ],
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0",
+    "dsh": ">=0.2.0-0 <0.3.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-ui-sidebar",
+        "@deepseek-ai/dsh-client-ui-layout"
+      ]
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "verify": "node verify/meta-evolve-verify.mjs",
+    "check": "npm run typecheck && npm run build && npm run verify",
+    "prepack": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "~18.3.31",
+    "react": "^18.3.1",
+    "tsdown": "^0.22.2",
+    "typescript": "^5.6.0"
+  },
+  "publishConfig": {
+    "tag": "next"
+  },
+  "status": "pre-release"
+}
