@@ -26,6 +26,19 @@ The package ships its own bundle patch at `cordis.patch.yml`. A profile that lis
 The host half registers its routes under the prefix `/meta-evolve`. `GET /meta-evolve/api/state` composes the live program state; the rounds store keeps one record per evolution round with its deltas; `POST /meta-evolve/api/evolve` appends a round and returns what moved.
 The client half contributes one panel page through the profile's client slot set, declared in `dsh.client.inject`. It renders state and it does not reach the GPU.
 
+## Roadmap at a glance
+
+A glance, not a second record: the authoritative list — with the evidence for every done row, the reason for every deferred one and the rows marked `NOT MEASURED` — is [`ROADMAP.md`](ROADMAP.md). Where this list and that file differ, that file is right and this list is the defect.
+
+- **What this package is**
+- **What is measured today**
+- **What 1.0.0 still requires**
+- **Limits, stated rather than implied**
+- **Compatibility seam**
+- **How this roadmap is graded**
+
+The roadmap currently carries **0** row(s) marked `NOT MEASURED`; a row moves to done only when its own command prints a green result.
+
 ## Checks
 
 Run these in the clone after a change; each prints its own count and exits non-zero on failure.
